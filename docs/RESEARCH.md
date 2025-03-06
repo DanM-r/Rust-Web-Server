@@ -7,7 +7,18 @@ Here the project reaserch prior to start programming the web server lies.
 - [Project Research](#project-research)
   - [Table of Contents](#table-of-contents)
   - [Concepts](#concepts)
-    - [Hyper Text Transfer Protocol 1.1 (HTTP/1.1)](#hyper-text-transfer-protocol-11-http11)
+  - [Hyper Text Transfer Protocol 1.1 (HTTP/1.1)](#hyper-text-transfer-protocol-11-http11)
+    - [Components](#components)
+    - [Connections](#connections)
+      - [Flow from client standpoint](#flow-from-client-standpoint)
+    - [HTTP Message Format](#http-message-format)
+    - [HTTP Message Parsing](#http-message-parsing)
+      - [Parsing considerations](#parsing-considerations)
+      - [Version Considerations](#version-considerations)
+      - [Request line considerations](#request-line-considerations)
+      - [Target URI](#target-uri)
+      - [Status-line considerations](#status-line-considerations)
+  - [Fetch API](#fetch-api)
 
 ## Concepts
 
@@ -86,12 +97,12 @@ controlled using the `Connection` header.
 3. Read the response
 4. Close or reuse connection.
 
-### HTML Message Format
+### HTTP Message Format
 
 Both request and response are messages, and the RFC defines clearly how a
 message is composed of.
 
-```HTML
+```HTTP
 start-line CRLF
 *( field-line CRLF )
 CRLF
@@ -103,14 +114,100 @@ requests, the start-line is named **request-line**, and for responses it is
 named **status-line**. Implementation limits what a server or a client can
 expect: client a response, server a request.
 
-- *request-line*: `GET / HTTP/1.1`
-  - `GET` method or peration the client wants to perform.
-  - `/` path of the resource to fetch.
-  - `HTTP/1.1` version of protocol
+- *request-line*: `method SP request-target SP HTTP-version` e.g. `GET / HTTP/
+1.1`
+  - *method*: operation the client wants to perform.
+  - *request-line*: path of the resource to fetch.
+  - *HTTP-version*: version of protocol
 - *status-line*: `HTTP/1.1 200 OK`
   - `HTTP/1.1` version of protocol
   - `200` status code, indicates the request was succesful or not and why.
   - `OK` status message, a short description of the status code.
+  
+### HTTP Message Parsing
+
+1. Start line into a structure
+2. Each header field into a hash table by field name until empyt line
+3. Based on parsed data, if body is expected proceed
+4. Read as a stream until amount of octets equals message length or connection
+is closed.
+
+#### Parsing considerations
+
+- Use ASCII encoding. Unicode encoding produces security vulnerabilities
+- String based parsers can be used once the elements where extracted
+- The line terminator is CRLF
+- Invalid request if CR appears. Maybe replace CR with SP
+- Invalid request with an extra CRLF at end of line
+- Invalid request with trailling whitespaces between start-line and
+first field-line.
+- Bad request, if server receives a proper start-line but a badly formed http
+grammar.
+
+#### Version Considerations
+
+- 1.1 compatible with 1.0 while ignoring newer features.
+- Each intermediary must rewrite the HTTP version with their own.
+- A server may respond with 1.0 a 1.1 request if client is suspected to
+incorrectly implement 1.1.
+
+#### Request line considerations
+
+- Invalid if other whitespace octet or more than one SP.
+- Not Implemented of server cannot process a request-line longer than it is
+capable of.
+- Servers at minimum implement a request-line of 8000 octets
+- Default methods:
+
+  | Method | Optional | Description |
+  | --- | --- | --- |
+  | GET | no | Get representation of resource |
+  | HEAD | no | Get without transfering |
+  | POST | yes | Processing of resource |
+  | PUT | yes | Replace resource |
+  | DELETE | yes | Remove resource |
+  | CONNECT | yes | Establish tunnel to the server on target |
+  | OPTIONS | yes | Communication options for resource |
+  | TRACE | yes | Message loop-back test along resource |
+
+- Some methods might not be implemented (Not-implemented) and some may not be
+allowed (Method Not allowed).
+- Bad request or Moved permanently if the target contains whitespaces. Respond
+with properly formed target.
+- Bad request if request doesnt contain a host header
+- If authority component is given the host header must contain same value
+- Bad request for any request with multiple host headers
+- Target syntax:
+  - origin-form = `absolute-path [ '?' query ]`, which the absolute-path is the
+  the URI of the resource. If empty `/`.
+  - absolute-form: the whole URL. Always send the host header but the server
+  and proxy must ignore the header and instead use the target.
+  - authority-form: `uri-host:port` only for CONNECT requests, for establishing
+  connection to a proxy.
+  - asterisk-form: `*` only for OPTIONS requests server-wide. The last proxy
+  must send a request with the asterisk-form after receiving a absolute response
+
+#### Target URI
+
+Is the target-request in absolute-form. Server must reconstruct the URI.
+
+- If server's configuration implements a URI scheme, its implemented. Otherwise,
+if the connection is secure: https, if not http.
+- If authority, its also URI unless its invalid or empty which will be empty.
+- If authority or asterisk, path+query will be empty, otherwise path+query is
+URI.
+- if scheme requires non-empty authority. server may reject message, interpret
+through context or apply default values (unsafe).
+
+```HTTP
+scheme :// authority path [ query ]
+```
+Then the server should try see if the URI is valid or reaching an existing
+resource that its willing to send a response.
+
+#### Status-line considerations
+
+- 
 
 ## Fetch API
 

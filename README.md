@@ -15,10 +15,3 @@ a server that can process HTTP requests and give an answer back.
 
 - [Salmon](#salmon)
   - [Table of Contents](#table-of-contents)
-  - [Concepts](#concepts)
-
-## Concepts
-
-A few concepts are needed to be learned before starting this project, specially
-how internally a web server and the http protocol work.
-
