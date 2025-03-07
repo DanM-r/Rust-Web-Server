@@ -119,10 +119,12 @@ expect: client a response, server a request.
   - *method*: operation the client wants to perform.
   - *request-line*: path of the resource to fetch.
   - *HTTP-version*: version of protocol
-- *status-line*: `HTTP/1.1 200 OK`
-  - `HTTP/1.1` version of protocol
-  - `200` status code, indicates the request was succesful or not and why.
-  - `OK` status message, a short description of the status code.
+- *status-line*: `HTTP-version SP status-code SP [ reason-phraase ]` e.g.
+`HTTP/1.1 200 OK`
+  - *status-code*: indicates the request was succesful or not and why.
+  - *reason-phrase*: `1*( HTAB / SP / VCHAR / obs-text )` a short description of
+  the status code.
+- *field-line*: `field-name ":" 1*( OWS / OS ) field-value 1*( OWS / OS )`
   
 ### HTTP Message Parsing
 
@@ -187,7 +189,28 @@ with properly formed target.
   - asterisk-form: `*` only for OPTIONS requests server-wide. The last proxy
   must send a request with the asterisk-form after receiving a absolute response
 
-#### Target URI
+#### Status-line considerations
+
+- May parse whitespace instead of SP, but like SP. (unsafe)
+- status-code is a 3-digit integer.
+- client should ignore the reason-phrase
+
+#### Field-line considerations
+
+Parsed using generic algorithm. Values are not parsed until a later stage of
+message interpretation.
+
+- Bad request if whitespace between field-name and colon.
+- Proxies must remove any whitespace from a response message.
+- Line folding should happen only within "message/http" container.
+- Bad request or (pref) Obsolete if line folding is received in origin server.
+- Bad gateway if line folding is received in proxy or gateway.
+ 
+#### Body considerations
+
+Signaled by `Content-Length` and `Transfer-Encoding` headers.
+
+### Target URI
 
 Is the target-request in absolute-form. Server must reconstruct the URI.
 
@@ -202,12 +225,9 @@ through context or apply default values (unsafe).
 ```HTTP
 scheme :// authority path [ query ]
 ```
+
 Then the server should try see if the URI is valid or reaching an existing
 resource that its willing to send a response.
-
-#### Status-line considerations
-
-- 
 
 ## Fetch API
 
