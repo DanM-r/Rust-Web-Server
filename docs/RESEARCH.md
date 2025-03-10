@@ -28,11 +28,13 @@ investigation, i will learn more about the HTTP protocol from the following
 sources: [*Mobile Directory Number (MDN)*][1] and *Request For Comments
 (MDN)* in the [RFC 9112][4], [RFC 9111][3] and the [RFC 9110][2] pages to gather
 the neccesary technical information about how this protocol works internally.
+As well, some other documentation like [the web server concept][5]
 
 [1]: https://developer.mozilla.org/en-US/docs/Web/HTTP
 [2]: https://datatracker.ietf.org/doc/html/rfc9110
 [3]: https://datatracker.ietf.org/doc/html/rfc9111
 [4]: https://datatracker.ietf.org/doc/html/rfc9112
+[5]: https://developer.mozilla.org/en-US/docs/Learn_web_development/Howto/Web_mechanics/What_is_a_web_server
 
 ## Hyper Text Transfer Protocol 1.1 (HTTP/1.1)
 
@@ -210,6 +212,35 @@ message interpretation.
 
 Signaled by `Content-Length` and `Transfer-Encoding` headers.
 
+- **Transfer encoding**: lists coding names that can be applied to form the
+message body.
+- Server must be able to parse the chunked coding.
+- Sender must not apply the chunked coding more than once to a body.
+- Sender must apply chunked as the final message, if any other coding  `
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ### Target URI
 
 Is the target-request in absolute-form. Server must reconstruct the URI.
@@ -228,6 +259,8 @@ scheme :// authority path [ query ]
 
 Then the server should try see if the URI is valid or reaching an existing
 resource that its willing to send a response.
+
+
 
 ## Fetch API
 
