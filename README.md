@@ -1,4 +1,4 @@
-# Salmon
+# Pistachio
 A simple, minimal web server made with rust for the initial purpose to learn
 deeply the rust programming language by making a small sized project with
 great value. For this reason, this project is not intended to be implemented
@@ -13,5 +13,5 @@ a server that can process HTTP requests and give an answer back.
 
 ## Table of Contents
 
-- [Salmon](#salmon)
+- [Pistachio](#pistachio)
   - [Table of Contents](#table-of-contents)

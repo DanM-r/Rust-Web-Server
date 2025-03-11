@@ -16,8 +16,22 @@ Here the project reaserch prior to start programming the web server lies.
       - [Parsing considerations](#parsing-considerations)
       - [Version Considerations](#version-considerations)
       - [Request line considerations](#request-line-considerations)
-      - [Target URI](#target-uri)
       - [Status-line considerations](#status-line-considerations)
+      - [Field-line considerations](#field-line-considerations)
+      - [Body considerations](#body-considerations)
+    - [HTTP Message Body Parsing](#http-message-body-parsing)
+      - [Transfer-Encoding](#transfer-encoding)
+      - [Status Codes](#status-codes)
+      - [Content-Length](#content-length)
+    - [HTTP Message Body Length](#http-message-body-length)
+    - [Handling incomplete messages](#handling-incomplete-messages)
+    - [Connection Management](#connection-management)
+    - [Associating a response to a request](#associating-a-response-to-a-request)
+    - [Persistence](#persistence)
+    - [Retrying requests](#retrying-requests)
+    - [Pipelining](#pipelining)
+    - [Concurrency](#concurrency)
+    - [Target URI](#target-uri)
   - [Fetch API](#fetch-api)
 
 ## Concepts
@@ -218,28 +232,101 @@ message body.
 - Sender must not apply the chunked coding more than once to a body.
 - Sender must apply chunked as the final message, if any other coding  `
 
+### HTTP Message Body Parsing
 
+#### Transfer-Encoding
 
+Lists the transfer coding names to apply to the content. To delimit dynamically generated content.
 
+- Always implement the *chunked* coding.
+- Sender must not apply *chunked* more than once
+- Sender must apply *chunked* as the final coding, if any other coding is
+specified.
+- Additional coding names can be included in the response.
+- May be sent as a response to a HEAD or 304 GET
+- Must not send in any 1xx or 204 or any 2xx of CONNECT
+- Server with not implemented coding names should responde with 501
+- Client must not send a request for a server that cannot handle version 1.1
+- Server must reject or use the Transfer-Encoding only if the Content-Length is specified.
+- If server or client receives a 1.0 message with Transfer encoding must treat the frame as faulty.
+  
+#### Status Codes
 
+- 1xx: Informational, request received process continues
+- 2xx: Successful, request successfully received, understood and accepted.
+- 3xx: Redirection, further action required
+- 4xx: Client error, request contains bad syntax or cannot be fulfilled.
+- 5xx: Server error, server failed to fulfill an apparently valid request.
 
+#### Content-Length
 
+When a message does not contains the Transfer-Encoding.
 
+### HTTP Message Body Length
 
+1. Any response to HEAD, 204, 304 -> terminated by the first empty line after header fields.
+2. Any 2xx to CONNECT -> empty line concldes the header fields, Transfer-Encoding and Content-Length should be ignored.
+3. Transfer-Encoding and Content-Length -> Bad request
+4. Transfer-Encoding and chunked final coding -> reading and decoding data until complete
+5. Transfer-Encoding and no chnked final -> Bad request
+6. Content-Length invalid -> Bad request or Bad Gateway or close connection
+7. Content-Length and no Trasfer-Encoding -> decimal value defines length in octets
+8. request and none above true -> 0 length
+9. response -> number octets received prior server closing connection.
 
+### Handling incomplete messages
 
+May send an error response. An incomple message -> premature close of connection, chucked decoding fails or terminates in the middle of header section. An
+incomplete message body -> zero-sized chunk not received. Valid Content-Length
+incomplete -> size of message is less than the value given by content-length.
 
+### Connection Management
 
+Connection protocols are managed based on client configuration. Includes
+maintaining the state of current connections, establishing a new connection,
+or reusing an existing connection, processing messages received, detecting
+connection failures and closing each connection. Shold be able to maintain many
+connections in parallel and control request queues.
 
+### Associating a response to a request
 
+- No request Identifier
+- Order of arrival.
+- More than one response per request only happens for 1xx status codes.
+- For multiple outsanding requests, client must hold a list of them.
+- Close connection if any data is received when no outsanding requests were
+active.
 
+### Persistence
 
+Default. Multiple requests over a same connection.
 
+- If close connection option is present, the connection will not persist.
+- for 1.1 or later, in 1.0 requires keep-alive option for non proxy and requests
+- Server must read the entire body of request
+- Proxy must not maintain a persistent connection with a 1.0
 
+### Retrying requests
 
+Anticipate the need to recover from asynchronous close events.
 
+### Pipelining
 
+Sending multiple requests without waiting for each response.
 
+- Server processng in parallel if they all have safe methods.
+- Same order of responses as the order requests have arrived.
+- Should retry unanswered requests if connection closes before receiving all the
+responses. Must not pipeline immediately after connection establishment.
+- Must not pipeline after non-idempotent method.
+- Intermediary may pipeline requests the pipelined requests it reeceives.
+
+### Concurrency
+
+- Client should limit the amount of simultaneous connections.
+- No max connections
+- Can cause congestion
+- Reject if contents is abusive or DoS.
 
 ### Target URI
 
