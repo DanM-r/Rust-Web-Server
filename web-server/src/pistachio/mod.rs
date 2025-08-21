@@ -1,9 +1,8 @@
 pub mod pistachio_server {
-
   use std::{
     env,
     io::{prelude::*, Error, Read, BufReader},
-    net::{Ipv4Addr, SocketAddr, SocketAddrV4, TcpListener, TcpStream},
+    net::{Ipv4Addr, SocketAddrV4, TcpListener, TcpStream},
     fs
   };
 
@@ -28,7 +27,6 @@ pub mod pistachio_server {
       ).expect("Error: cannot start listening for connections");
 
       for stream in listener.incoming() {
-        println!("Received connection");
         let connection = stream.expect(
           "Cannot establish connection"
         );
@@ -36,13 +34,14 @@ pub mod pistachio_server {
       }
     }
 
-    fn handle_request(&self, mut connection: TcpStream) {
+    fn handle_request(&self, connection: TcpStream) {
       let buf_reader = BufReader::new(&connection);
       let http_request: Vec<_> = buf_reader
           .lines()
           .map(|result| result.unwrap())
           .take_while(|line| !line.is_empty())
           .collect();
+      println!("  {} on {}", http_request[0], http_request[1]);
 
       self.send_response(connection);
     }
@@ -51,7 +50,6 @@ pub mod pistachio_server {
       // CRLF -> \r\n\r\n
       let status_line = "HTTP/1.1 200 OK";
 
-      // cconnection.write_all(response.as_bytes()).unwrap();
       let contents = fs::read_to_string("src\\resources\\hello.html").unwrap();
       let length = contents.len();
   
